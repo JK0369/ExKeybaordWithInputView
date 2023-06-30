@@ -9,16 +9,28 @@ import UIKit
 import Then
 import SnapKit
 import RxSwift
-import RxGesture
+
+/*
+ 0. 할것: RxKeyboard 걷어내는 방법?
+ 1. 키보드가 올라감 > autolayout으로 키보드 top을 잡고 있는데, 스크롤의 frame이 작아짐 (= contentSize에 비해 작다면 스크롤 됨)
+ 2. 키보드가 올라왔을 때, 스크롤은 현재 지점 상태이므로 내려줘야함 scrollToBottom()
+ */
 
 class ViewController: UIViewController, KeyboardWrapperable {
     private enum Policy {
         static let countOfText = 700
     }
     private enum Metric {
+        static let scrollViewTopSpacing = 30.0
         static let textViewHeight = UIScreen.main.bounds.height * 0.5
         static let stackViewSpacing = 10.0
         static let spacing = 30.0
+        static let buttonHeight = 80.0
+        static let bottomSpacing = 30.0
+        static var interSpacing: CGFloat {
+            let safeInset = UIApplication.shared.windows.first?.safeAreaInsets ?? .zero
+            return UIScreen.main.bounds.height - (scrollViewTopSpacing + textViewHeight + buttonHeight + bottomSpacing + safeInset.top + safeInset.bottom)
+        }
     }
     
     private let scrollView = UIScrollView().then {
@@ -38,12 +50,14 @@ class ViewController: UIViewController, KeyboardWrapperable {
         $0.font = .systemFont(ofSize: 18)
         $0.textColor = .lightGray
     }
+    private let interSpacerView = UIView()
     fileprivate let button = UIButton(type: .system).then {
         $0.backgroundColor = .green.withAlphaComponent(0.3)
         $0.setTitle("완료", for: .normal)
         $0.setTitleColor(.blue, for: .normal)
         $0.setTitleColor(.systemBlue, for: [.normal, .highlighted])
     }
+    private let bottomSpacerView = UIView()
     
     fileprivate let textViewPlaceHolder = "텍스트를 입력하세요"
     let disposeBag = DisposeBag()
@@ -55,7 +69,6 @@ class ViewController: UIViewController, KeyboardWrapperable {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        bind()
         setupKeybaordWrapper()
         setupUI()
     }
@@ -65,44 +78,50 @@ class ViewController: UIViewController, KeyboardWrapperable {
         textView.delegate = self
         
         keyboardSafeAreaView.addSubview(scrollView)
-        keyboardSafeAreaView.addSubview(button)
         scrollView.addSubview(stackView)
         stackView.addArrangedSubview(textView)
+        stackView.addArrangedSubview(interSpacerView)
+        stackView.addArrangedSubview(button)
+        stackView.addArrangedSubview(bottomSpacerView)
         
         scrollView.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(30)
-            $0.leading.trailing.bottom.equalToSuperview()
+            $0.top.equalToSuperview().inset(Metric.scrollViewTopSpacing)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview()
         }
         stackView.snp.makeConstraints {
             $0.top.equalToSuperview().priority(.medium)
             $0.leading.trailing.width.equalToSuperview()
             $0.bottom.equalToSuperview().priority(.high)
-            $0.bottom.lessThanOrEqualTo(button.snp.top).offset(-30).priority(.medium)
         }
         textView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(30)
             $0.height.equalTo(Metric.textViewHeight)
         }
+        interSpacerView.snp.makeConstraints {
+            $0.height.equalTo(Metric.interSpacing)
+        }
         button.snp.makeConstraints {
-            $0.leading.trailing.bottom.equalToSuperview()
-            $0.height.equalTo(80)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(Metric.buttonHeight)
+        }
+        bottomSpacerView.snp.makeConstraints {
+            $0.height.equalTo(Metric.bottomSpacing)
         }
         
         didChangeKeyboardHeight = { [weak self] height in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
-                print(self?.stackView.frame.origin)
-                self?.scrollView.contentInset.bottom = -height
+            guard let self else { return }
+            print(height)
+            interSpacerView.isHidden = height != 0
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
+                self.scrollToBottom()
             })
         }
     }
     
-    private func bind() {
-//        view.rx.tapGesture()
-//            .when(.ended)
-//            .bind(with: self) { ss, _ in
-//                ss.view.endEditing(true)
-//            }
-//            .disposed(by: disposeBag)
+    func scrollToBottom() {
+        let bottomOffset = CGPoint(x: 0, y: scrollView.contentSize.height - scrollView.bounds.size.height)
+        scrollView.setContentOffset(bottomOffset, animated: true)
     }
 }
 
