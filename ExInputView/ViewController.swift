@@ -17,9 +17,19 @@ class ViewController: UIViewController, KeyboardWrapperable {
     }
     private enum Metric {
         static let textViewHeight = UIScreen.main.bounds.height * 0.5
+        static let stackViewSpacing = 10.0
         static let spacing = 30.0
     }
     
+    private let scrollView = UIScrollView().then {
+        $0.showsVerticalScrollIndicator = false
+    }
+    private let stackView = UIStackView().then {
+        $0.axis = .vertical
+        $0.alignment = .center
+        $0.distribution = .fill
+        $0.spacing = Metric.stackViewSpacing
+    }
     private let textView = UITextView().then {
         $0.backgroundColor = .lightGray.withAlphaComponent(0.1)
         $0.layer.borderWidth = 1.0
@@ -40,6 +50,7 @@ class ViewController: UIViewController, KeyboardWrapperable {
     
     var keyboardWrapperView = PassThroughView()
     var keyboardSafeAreaView = PassThroughView()
+    var didChangeKeyboardHeight: ((CGFloat) -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -53,28 +64,45 @@ class ViewController: UIViewController, KeyboardWrapperable {
         textView.text = textViewPlaceHolder
         textView.delegate = self
         
-        keyboardSafeAreaView.addSubview(textView)
+        keyboardSafeAreaView.addSubview(scrollView)
         keyboardSafeAreaView.addSubview(button)
+        scrollView.addSubview(stackView)
+        stackView.addArrangedSubview(textView)
         
+        scrollView.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(30)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+        stackView.snp.makeConstraints {
+            $0.top.equalToSuperview().priority(.medium)
+            $0.leading.trailing.width.equalToSuperview()
+            $0.bottom.equalToSuperview().priority(.high)
+            $0.bottom.lessThanOrEqualTo(button.snp.top).offset(-30).priority(.medium)
+        }
         textView.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(30)
             $0.leading.trailing.equalToSuperview().inset(30)
-            $0.height.equalTo(Metric.textViewHeight).priority(.medium)
-            $0.bottom.lessThanOrEqualTo(button.snp.top).offset(-Metric.spacing)
+            $0.height.equalTo(Metric.textViewHeight)
         }
         button.snp.makeConstraints {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(80)
         }
+        
+        didChangeKeyboardHeight = { [weak self] height in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: {
+                print(self?.stackView.frame.origin)
+                self?.scrollView.contentInset.bottom = -height
+            })
+        }
     }
     
     private func bind() {
-        view.rx.tapGesture()
-            .when(.ended)
-            .bind(with: self) { ss, _ in
-                ss.view.endEditing(true)
-            }
-            .disposed(by: disposeBag)
+//        view.rx.tapGesture()
+//            .when(.ended)
+//            .bind(with: self) { ss, _ in
+//                ss.view.endEditing(true)
+//            }
+//            .disposed(by: disposeBag)
     }
 }
 

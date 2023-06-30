@@ -21,6 +21,7 @@ protocol KeyboardWrapperable {
     var keyboardWrapperView: PassThroughView { get }
     var keyboardSafeAreaView: PassThroughView { get }
     var disposeBag: DisposeBag { get }
+    var didChangeKeyboardHeight: ((CGFloat) -> Void)? { get }
     
     func setupKeybaordWrapper()
 }
@@ -42,7 +43,7 @@ extension KeyboardWrapperable where Self: UIViewController {
         setupLayout()
         observeKeyboardHeight()
     }
-
+    
     private func setupLayout() {
         view.addSubview(keyboardWrapperView)
         view.addSubview(keyboardSafeAreaView)
@@ -63,6 +64,7 @@ extension KeyboardWrapperable where Self: UIViewController {
             .asObservable()
             .filter { 0 <= $0 }
             .bind(with: self, onNext: { ss, height in
+                ss.didChangeKeyboardHeight?(height)
                 ss.keyboardWrapperView.snp.updateConstraints {
                     $0.height.equalTo(height).priority(.high)
                 }
