@@ -9,7 +9,6 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
-import RxKeyboard
 
 private struct AssociatedKeys {
     static var isEnabled = "isEnabled"
@@ -60,9 +59,10 @@ extension KeyboardWrapperable where Self: UIViewController {
     }
 
     private func observeKeyboardHeight() {
-        RxKeyboard.instance.visibleHeight
-            .asObservable()
-            .filter { 0 <= $0 }
+        NotificationCenter.default.rx.notification(UIResponder.keyboardWillShowNotification)
+            .compactMap { $0.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect }
+            .map(\.height)
+            .distinctUntilChanged()
             .bind(with: self, onNext: { ss, height in
                 ss.didChangeKeyboardHeight?(height)
                 ss.keyboardWrapperView.snp.updateConstraints {

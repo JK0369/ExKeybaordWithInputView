@@ -9,7 +9,6 @@ target 'ExInputView' do
   pod 'Then'
   pod 'RxSwift'
   pod 'RxCocoa'
-  pod 'RxKeyboard'
   
   target 'ExInputViewTests' do
     inherit! :search_paths
