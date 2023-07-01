@@ -10,12 +10,6 @@ import Then
 import SnapKit
 import RxSwift
 
-/*
- 0. 할것: RxKeyboard 걷어내는 방법?
- 1. 키보드가 올라감 > autolayout으로 키보드 top을 잡고 있는데, 스크롤의 frame이 작아짐 (= contentSize에 비해 작다면 스크롤 됨)
- 2. 키보드가 올라왔을 때, 스크롤은 현재 지점 상태이므로 내려줘야함 scrollToBottom()
- */
-
 class ViewController: UIViewController, KeyboardWrapperable {
     private enum Policy {
         static let countOfText = 700
