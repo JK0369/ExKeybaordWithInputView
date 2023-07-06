@@ -69,6 +69,7 @@ extension KeyboardWrapperable where Self: UIViewController {
                 let endFrameMinY = endFrame.minY
                 let isKeyboardUp = endFrameMinY < beginFrameMinY
                 let shownKeyboardHeight = isKeyboardUp ? endFrame.height : 0
+                ss.didChangeKeyboardHeight?(shownKeyboardHeight)
                 
                 ss.keyboardWrapperView.snp.updateConstraints {
                     $0.height.equalTo(shownKeyboardHeight).priority(.high)
@@ -81,6 +82,5 @@ extension KeyboardWrapperable where Self: UIViewController {
                 )
             })
             .disposed(by: disposeBag)
-
     }
 }

@@ -79,7 +79,7 @@ class ViewController: UIViewController, KeyboardWrapperable {
         stackView.addArrangedSubview(bottomSpacerView)
         
         scrollView.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(Metric.scrollViewTopSpacing)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(Metric.scrollViewTopSpacing)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview()
         }
