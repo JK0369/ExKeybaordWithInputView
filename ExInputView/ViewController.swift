@@ -42,6 +42,7 @@ class ViewController: UIViewController, KeyboardWrapperable {
         $0.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
         $0.textContainerInset = UIEdgeInsets(top: 16.0, left: 16.0, bottom: 16.0, right: 16.0)
         $0.font = .systemFont(ofSize: 18)
+        $0.isScrollEnabled = false
         $0.textColor = .lightGray
     }
     private let interSpacerView = UIView()
@@ -90,7 +91,7 @@ class ViewController: UIViewController, KeyboardWrapperable {
         }
         textView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(30)
-            $0.height.equalTo(Metric.textViewHeight)
+            $0.height.greaterThanOrEqualTo(Metric.textViewHeight)
         }
         interSpacerView.snp.makeConstraints {
             $0.height.equalTo(Metric.interSpacing)
