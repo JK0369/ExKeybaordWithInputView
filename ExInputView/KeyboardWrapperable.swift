@@ -32,11 +32,11 @@ extension KeyboardWrapperable where Self: UIViewController {
             objc_setAssociatedObject(self, &AssociatedKeys.isEnabled, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
-
+    
     func setupKeybaordWrapper() {
         guard !isEnabled else { return }
         isEnabled.toggle()
-
+        
         setupLayout()
         observeKeyboardHeight()
     }
@@ -49,25 +49,27 @@ extension KeyboardWrapperable where Self: UIViewController {
             $0.leading.trailing.bottom.equalToSuperview()
             $0.height.equalTo(0).priority(.high)
         }
-
+        
         keyboardSafeAreaView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(keyboardWrapperView.snp.top)
         }
     }
-
+    
     private func observeKeyboardHeight() {
-        NotificationCenter.default.rx.notification(UIResponder.keyboardWillChangeFrameNotification)
-            .bind(with: self, onNext: { ss, notification in
+        Observable<(Bool, Notification)>
+            .merge(
+                NotificationCenter.default.rx.notification(UIResponder.keyboardWillShowNotification)
+                    .map { notification in (true, notification) },
+                NotificationCenter.default.rx.notification(UIResponder.keyboardWillHideNotification)
+                    .map { notification in (false, notification) }
+            )
+            .bind(with: self) { ss, tuple in
+                let (isKeyboardUp, notification) = tuple
                 let uesrInfo = notification.userInfo
-                let beginFrame = uesrInfo?[UIResponder.keyboardFrameBeginUserInfoKey] as? CGRect
-                let endFrame = uesrInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
+                guard let endFrame = uesrInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
                 
-                guard let beginFrame, let endFrame else { return }
-                
-                let beginFrameMinY = beginFrame.minY
-                let endFrameMinY = endFrame.minY
-                let isKeyboardUp = endFrameMinY < beginFrameMinY
+                let endFrameMinY = endFrame.origin.y
                 let shownKeyboardHeight = isKeyboardUp ? endFrame.height : 0
                 ss.didChangeKeyboardHeight?(shownKeyboardHeight)
                 
@@ -80,7 +82,7 @@ extension KeyboardWrapperable where Self: UIViewController {
                     options: .init(rawValue: 458752),
                     animations: ss.view.layoutIfNeeded
                 )
-            })
+            }
             .disposed(by: disposeBag)
     }
 }
